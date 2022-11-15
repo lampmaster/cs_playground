@@ -1,4 +1,4 @@
-export function on(target: HTMLElement, eventType: string) {
+export function on(target: HTMLElement, eventType: string): AsyncIterableIterator<Event> {
     let internalResolve = null
     const eventStack = []
 
@@ -27,6 +27,13 @@ export function on(target: HTMLElement, eventType: string) {
                 } else {
                     internalResolve = resolve
                 }
+            })
+        },
+        
+        return() {
+            return new Promise(resolve => {
+                target.removeEventListener(eventType, eventHandler)
+                resolve({done: true, value: undefined})
             })
         }
     }
