@@ -1,20 +1,4 @@
-export function on(target: HTMLElement, eventType: string): AsyncIterableIterator<Event> {
-    let internalResolve = null
-    const eventStack = []
-
-    const eventHandler = (event: any) => {
-        const result: IteratorResult<any> = {done: false, value: event}
-
-        if (internalResolve !== null) {
-            internalResolve(result)
-            internalResolve = null
-        } else {
-            eventStack.push(result)
-        }
-    }
-
-    target.addEventListener(eventType, eventHandler)
-
+export function on(emitter: HTMLElement, eventType: keyof HTMLElementEventMap) {
     return {
         [Symbol.asyncIterator]() {
             return this
@@ -22,20 +6,18 @@ export function on(target: HTMLElement, eventType: string): AsyncIterableIterato
 
         next() {
             return new Promise(resolve => {
-                if (eventStack.length !== 0) {
-                    resolve(eventStack.pop())
-                } else {
-                    internalResolve = resolve
-                }
+                emitter.addEventListener(eventType, (event) => {
+                    resolve({done: false, value: event})
+                }, {once: true})
             })
         },
-        
+
         return() {
             return new Promise(resolve => {
-                target.removeEventListener(eventType, eventHandler)
-                resolve({done: true, value: undefined})
-            })
+                emitter.removeEventListener(eventType, (event) => {
+                    resolve({done: true, value: undefined})
+                })
+            }) 
         }
     }
 }
-
